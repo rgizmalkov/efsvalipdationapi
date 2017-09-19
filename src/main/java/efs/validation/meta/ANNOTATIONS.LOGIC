@@ -1,0 +1,156 @@
+ПРАВИЛА
+
+1. Если аннотация маркировано аннотацией @Strategy то
+    - поведение анализатора аннотации должно быть рекурсивным для поиска всех стратегий, отбрасывая все остальные аннотации
+    - аннотация может быть поставлена над другой аннотацией и полем
+    - аннотация должна определять поведения валидатора для данного поля
+Например:
+    @ObjectStrategy со значением ONE_FAIL_ALL_DOWN - означает, что если одна из внутренних валидаций объекта не прошла ТО и вся валидация объекта не прошла
+
+2. Если над полем найдена аннотация маркированная аннотацией @Composite то
+    - будет выбрана первая ТАКАЯ аннотация
+    - никакие другие аннотации из стека валидации, поведения валидатора и менеджмента значений не отработает
+    - одинаковые валидаторы не отработают дважды
+Структура аннотации маркированной @Composite
+
+Общий пример:
+@Strategy
+@ObjectStrategy(ALL_FAIL_IT_DOWN)
+@ReduceLevel(
+    event = SET_DEFAULT,
+    from = FAIL,
+    to = WARN
+)
+class @interface CustomUserStrategy{}
+
+@Composite
+@Condition(FIRST_FLOW)
+@ExcludeOn(key = validation.notnull.exclude.example)
+@NonNull
+class @interface CustomNonNull{}
+
+
+@Composite
+@CustomUserStrategy
+@Conditions(
+    @Condition(FIRST_FLOW),
+    @Condition(SECOND_FLOW),
+    @Condition(THIRD_FLOW)
+)
+@CustomNonNull
+@Pattern("^\\d{2}\\.\\d{2}\\.\\d{2}$")
+@RelatedValidators({
+    @RelatedValidator(Validator1.class),
+    @RelatedValidator(Validator2.class)
+})
+public @interface CustomCompositeAnnotation{}
+
+
+3. Если над классом найдена аннотация @DecomposedMap или дрягая аннотация маркированная данной
+    -декларативное описание валидации объекта
+    -кроме частных случаев, для сложной модели проще использовать ее
+
+4. ПРАВИЛА. ПРИОРИТЕТ и ПОСТРОЕНИЕ КАРТЫ ВАЛИДАЦИИ
+
+    1. Создается стек для каждого поля в классе, определяя псевдонимы для декларативного мапинга
+    через аннотацию @Named("VALUE")
+    2. Парсинг @DecomposedMap аннотации - составление базового объекта валидации
+    3. Парсинг полей класса - составление базового объекта валидации
+    4. Интерпритация списка базовых объектов валидации и сокращения числа идентичных или пересекаюзихся аннотаций
+
+    - Приотизирование стратегий (значения будут перетираться по продвижунию в право)
+    DecomposedMap.strategy -> DecomposedElement.strategy -> Верхнеуровневый, первый зарегистрированный Strategy.
+
+    - ReduceLevel - можно задавать только в стратегиях. Все остальные варианты не будут учитываться.
+    Учитывается первый встретившийся ReduceLevel (в верхнеуровневой Strategy).
+
+    - Если верхнеуровневый @Composite имеет аннотацию @ExcludeOn - то во все вложенные объекты валидации
+    должно записаться его значение
+
+    PS (фор футюр). Построение модели валидации объекта требуется сделать один раз при старте приложения.
+    Затем по сконструированной модели сопоставлять пакет.имя_класса.поле с валидационной моделью
+
+
+Пример с исключением валидации из составного объекта:
+ТЗ :
+    Есть три флоу: FIRST_FLOW, SECOND_FLOW, THIRD_FLOW.
+    1. Для первого флоу требется провалидировать только персону,
+    кроме поля Person.email и обе строки,
+    иметь возможность отключить валидацию персоны строки с подстановкой
+    дефолтного значения и снижением уровня критичности до варнинга и
+    отключением валидации персоныэ
+    2. Провалидировать список документов
+    3. Провалидировать персону и список документов с возможностью отключения
+    поля IdentityDocument.placement
+    PS. Все поля проверяются на NotNull за исключением поля Person.email
+    - оно должно соответсвовать паттерну "^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$"
+
+-----------------Создадим аннотации-----------------
+@Strategy
+@ObjectStrategy(ALL_FAIL_IT_DOWN)
+@ReduceLevel(
+    event = SET_DEFAULT,
+    from = FAIL,
+    to = WARN
+)
+class @interface CustomUserStrategy{}
+
+@Composite
+@Conditions({
+    @Condition(FIRST_FLOW),
+    @Condition(THIRD_FLOW)
+})
+@NotNull
+public @interface CustomPersonNotNull{}
+
+@Composite
+@Condition(THIRD_FLOW)
+@Pattern("^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$")
+public @interface CustomPersonPattern{}
+
+@DecomposedMap(
+    strategy = @CustomUserStrategy
+    elements = {
+        @DecomposedElement(
+            fields={firstName, lastName},
+            validators = {@RelatedValidator(NotNullValidator.class)},
+            conditions={@Condition(FIRST_FLOW),@Condition(THIRD_FLOW)}
+        ),
+        @DecomposedElement(
+            fields={email},
+            composites = {CustomPersonPattern.class},
+            conditions={@Condition(THIRD_FLOW)}
+            strategy = /*another*/
+        )
+    }
+})
+
+----------------------------------------------------
+class Person {
+
+    @Named("firstName")
+    private String name;
+    private String lastName;
+    private String secondName;
+    private String email;
+}
+class IdentityDocument {
+    private String seria;
+    private String number;
+    private String placement;
+}
+
+class ComplexClass{
+
+    private String string1;
+    private String string2;
+    private Person person;
+    private List <IdentityDocument> documents;
+
+}
+-----------------------------------------------------
+
+-Аннатотации типа Set, Field - могут выбрасывать события.
+В стратегии можно зарегестрировать обработчик события для
+данного класса или поля. Который будет совершать некое действие
+над респонсом валидации

@@ -1,0 +1,40 @@
+@RelatedValidator - класс валидатора объекта
+@RelatedValidators - композиция @RelatedValidator
+
+@DynamicManagedValue - аннотация отвечающая за динамическое изменение объектов
+@EventRegistrar - регистрирует событие, которое должно быть выброшено при выполнении аннотации.
+ Может быть выполнено только для аннотаций типа @DynamicManagedValue
+@Default - вставляет дефолтное значение, бросает эвент SET_DEFAULT_VALUE
+
+
+
+Обрабатываемые аннотации состав:
+
+1. @Validation
+    - @RelatedValidator
+    - @RelatedValidators
+    - @ExcludeOn
+    - @Condition
+
+
+2. @Complex
+    - @RelatedValidator
+    - @RelatedValidators
+    - аннотации помеченные аннотацией @Validation
+    - @ExcludeOn - при указании данной аннотации будут исключены все валидаторы
+    - @Condition - доюавляет условие к существующим
+
+3. @Composite - одна над полем
+    - @Composite
+    - @Strategy
+    - @Default
+    - @Complex
+    - @Validation
+    - @RelatedValidator
+    - @RelatedValidators
+    - @ExcludeOn - при указании данной аннотации будут исключены все валидаторы
+    - аннотации помеченные @DynamicManagedValue
+    - @Condition
+
+4. @Strategy
+    - аннотации помеченные EventReg
