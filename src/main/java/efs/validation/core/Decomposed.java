@@ -1,8 +1,7 @@
 package efs.validation.core;
 
-import com.gmail.rgizmalkov.dev.ival.Validator;
+import efs.validation.meta.related.Validator;
 import com.google.common.base.Objects;
-import efs.validation.core.meta.Default;
 import efs.validation.enums.ValidationStrategy;
 
 import java.lang.annotation.Annotation;
@@ -22,7 +21,7 @@ public class Decomposed {
 
     public static class Strategy {
         ValidationStrategy validationStrategy;
-        Set<Event> events;
+        Set<Event> events = new HashSet<>();
         public static class Event{
             String eventName;
             Annotation annotation;
@@ -68,8 +67,7 @@ public class Decomposed {
             this.validationStrategy = validationStrategy;
         }
 
-        public Strategy setEvent(Event event) {
-            if(events == null) events = new HashSet<>();
+        public Strategy addEvent(Event event) {
             this.events.add(event);
             return this;
         }
@@ -194,41 +192,34 @@ public class Decomposed {
     }
 
     public static class ValidationCondition {
-        Set<String> conditions;
-        Set<String> excludeOn;
+        Set<String> conditions = new HashSet<>();
+        Set<String> excludeOn = new HashSet<>();
         Class<? extends Validator> validator;
 
         public ValidationCondition() {
         }
 
-        public ValidationCondition(Set<String> conditions, Class<? extends Validator> validator) {
-            this.conditions = conditions;
-            this.validator = validator;
-        }
-
-        public ValidationCondition(Set<String> conditions, Set<String> excludeOn, Class<? extends Validator> validator) {
-            this.conditions = conditions;
-            this.excludeOn = excludeOn;
-            this.validator = validator;
-        }
 
         public ValidationCondition setConditions(Set<String> conditions) {
+            if(conditions == null) return this;
             this.conditions = conditions;
             return this;
         }
 
         public ValidationCondition setExcludeOn(Set<String> excludeOn) {
+            if(excludeOn == null) return this;
             this.excludeOn = excludeOn;
             return this;
         }
 
         public ValidationCondition addExcludeOn(String excludeOn) {
-            if(excludeOn == null) this.excludeOn = new HashSet<>();
+            if(excludeOn == null) return this;
             this.excludeOn.add(excludeOn);
             return this;
         }
 
         public ValidationCondition setValidator(Class<? extends Validator> validator) {
+            if(validator == null) return this;
             this.validator = validator;
             return this;
         }

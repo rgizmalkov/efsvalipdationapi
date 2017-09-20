@@ -10,7 +10,12 @@ public class Person {
     String firstName;
     String middleName;
     String lastName;
+    @Naming("personalEmail")
     String email;
+
+    Gender gender;
+
+    public Person(){}
 
     public Person(IdentityDocument[] identityDocument, IdentityDocument[] identityDocument2, String firstName, String middleName, String lastName) {
         this.identityDocument = identityDocument;
@@ -22,14 +27,15 @@ public class Person {
 
     public static void main(String[] args) {
         EfsValidationMachine efsValidationMachine = new EfsValidationMachine();
-        IdentityDocument idoc1 = new IdentityDocument("222","333");
-        IdentityDocument idoc2 = new IdentityDocument("223","332");
-        IdentityDocument idoc3 = null;
-        IdentityDocument[] identityDocuments = {idoc1, idoc2, idoc3};
-        Person person = new Person(
-                identityDocuments, null, "Роман", "Геннадьевич", "Измалков"
-        );
+//        IdentityDocument idoc1 = new IdentityDocument("222","333");
+//        IdentityDocument idoc2 = new IdentityDocument("223","332");
+//        IdentityDocument idoc3 = null;
+//        IdentityDocument[] identityDocuments = {idoc1, idoc2, idoc3};
+//        Person person = new Person(
+//                identityDocuments, null, "Роман", "Геннадьевич", "Измалков"
+//        );
+        Object o = ValidationMapStaticCreator.create(Person.class);
 
-        efsValidationMachine.validation(person);
+        efsValidationMachine.validation(o);
     }
 }

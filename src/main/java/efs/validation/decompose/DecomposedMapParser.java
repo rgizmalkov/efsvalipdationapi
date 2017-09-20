@@ -57,7 +57,7 @@ public class DecomposedMapParser implements DecomposedClassService {
                 }
                 RelatedValidator[] validators = element.validators();
                 for (RelatedValidator validator : validators) {
-                    createAnnotationRs.addCondition(new Decomposed.ValidationCondition(null, null, validator.value()));
+                    createAnnotationRs.addCondition(new Decomposed.ValidationCondition().setValidator(validator.value()));
                 }
 
                 for (Decomposed.ValidationCondition validationCondition : createAnnotationRs.conditions) {

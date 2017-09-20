@@ -19,6 +19,7 @@ import java.util.Map;
 import static efs.validation.util.ObjectUtil.castToArray;
 import static efs.validation.util.ObjectUtil.isArray;
 import static efs.validation.util.ObjectUtil.isPrimitive;
+import static java.lang.String.format;
 
 @Component
 public class EfsDecomposeObjectService implements DecomposeObjectService<DecomposedObject> {
@@ -38,7 +39,7 @@ public class EfsDecomposeObjectService implements DecomposeObjectService<Decompo
 
     private DecomposedObject recursiveTreeDecompose(/*NonNull*/Object o, DecomposedObject localRoot, Map<String, DecomposedRs> decomposeClassMap) {
         if (o == null) return null;
-        if (localRoot == null) localRoot = new DecomposedObject().setVo(o);
+        if (localRoot == null) localRoot = new DecomposedObject().setVo(o).setValidationObjectClass(o.getClass());
 
         Class<?> objectClass = o.getClass();
         //Поле - валидаторы + условия + исключения + стратегии валидирования поля
@@ -53,30 +54,23 @@ public class EfsDecomposeObjectService implements DecomposeObjectService<Decompo
             Field declaredField = declaredFields[f];
             Object declaredObject = declaredObjects[f];
 
-            DecomposedRs decomposed = tryToFindDecomposed(decomposeClassMap, localRoot);
-
+            DecomposedObject localDecomposedObject = new DecomposedObject().setVo(declaredObject).setRoot(localRoot).setField(declaredField).setValidationObjectClass(declaredField.getType());
+            DecomposedRs decomposed = tryToFindDecomposed(decomposeClassMap, localDecomposedObject);
+            if(decomposed != null){
+                localDecomposedObject.setDecomposed(decomposed.getDecomposed()).setDefaultValue(decomposed.getDefaultValue());
+            }
             boolean primitive = isPrimitive(declaredField.getType());
             boolean isArray = isArray(declaredObject, declaredField);
             if (!primitive && !isArray) {
-                DecomposedObject localDecomposedObject = new DecomposedObject().setVo(o).setRoot(localRoot).setField(declaredField);
-                if(decomposed != null){
-                    localDecomposedObject.setDecomposed(decomposed.getDecomposed()).setDefaultValue(decomposed.getDefaultValue());
-                }
                 decomposedObject = recursiveTreeDecompose(declaredObject, localDecomposedObject, null);
             } else if (isArray) {
                 switch (arrayPrincipe) {
                     case INNER:
-                        decomposedObject = innerArrayDecompose(localRoot, o, declaredObject, declaredField, decomposed);
-                        break;
-                    default:
-                        decomposedObject = outerArrayDecompose(localRoot, o, declaredField, decomposed);
+                        decomposedObject = innerArrayDecompose(localDecomposedObject, declaredObject, declaredField);
                         break;
                 }
-            } else {
-                decomposedObject = new DecomposedObject().setVo(o).setRoot(localRoot).setField(declaredField);
-                if(decomposed != null){
-                    decomposedObject.setDecomposed(decomposed.getDecomposed()).setDefaultValue(decomposed.getDefaultValue());
-                }
+            }else {
+                decomposedObject = localDecomposedObject;
             }
             localRoot.addBranch(decomposeService.reachDecomposeObject(decomposedObject));
         }
@@ -100,27 +94,40 @@ public class EfsDecomposeObjectService implements DecomposeObjectService<Decompo
         return null;
     }
 
-    private DecomposedObject outerArrayDecompose(DecomposedObject localRoot, Object o, Field field, DecomposedRs decomposed) {
-        return new DecomposedObject().setVo(o).setRoot(localRoot).setField(field);
-    }
-
-    private DecomposedObject innerArrayDecompose(DecomposedObject localRoot, Object o, Object declaredObject, Field field, DecomposedRs decomposed) {
-        DecomposedObject decomposedObject = outerArrayDecompose(localRoot, o, field, decomposed);
+    /**
+     *
+     * @param localRoot - корневой объект (сам массив)
+     * @param declaredObject - объект массива
+     * @param field - LClass
+     * @return - рутовый объект с N ветвями, где N - кол-во объектов в массиве
+     */
+    private DecomposedObject innerArrayDecompose(DecomposedObject localRoot, Object declaredObject, Field field) {
+        localRoot.setArray(true);
+        //Кастим любой вектор данных в массив
         Object[] objects = castToArray(declaredObject);
         if (objects != null) {
             Class<? extends Object[]> ocls = objects.getClass();
+            //Определяем тип элементов массива
             Class<?> componentType = ocls.getComponentType();
+            //Определяем для данного типа элемента массива ее классовые аннотации (одинаковые для всех элементов массива)
+            //Работа массивов с разными типами элементов (не полиморфными) не поддерживается
             Map<String, DecomposedRs> decomposeMap = decomposedClassService.decompose(componentType);
+            int i = 0;
             for (Object innerObj : objects) {
-                DecomposedObject decomposedObjectBranch = new DecomposedObject().setRoot(decomposedObject).setVo(innerObj).setField(field).setArrayElement(true);
+                // innerObj - элемент массива
+                DecomposedObject decomposedObjectBranch = new DecomposedObject().setRoot(localRoot).setVo(innerObj).setField(field).setValidationObjectClass(componentType);
+                NamedObject beforeNamedObject = decomposedObjectBranch.getNamedObject();
+                NamedObject namedObject = new NamedObject(format("%s[%s]", beforeNamedObject.getName(), i++));
+                namedObject.addAlias(beforeNamedObject.getName());
+                decomposedObjectBranch.setNamedObject(namedObject);
                 if (innerObj != null) {
-                    decomposedObject.addBranch(recursiveTreeDecompose(innerObj, decomposedObjectBranch, decomposeMap));
+                    localRoot.addBranch(recursiveTreeDecompose(innerObj, decomposedObjectBranch, decomposeMap));
                 } else {
-                    decomposedObject.addBranch(decomposedObjectBranch);
+                    localRoot.addBranch(decomposedObjectBranch);
                 }
             }
         }
-        return decomposedObject;
+        return localRoot;
     }
 
 

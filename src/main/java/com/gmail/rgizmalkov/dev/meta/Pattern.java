@@ -1,6 +1,6 @@
 package com.gmail.rgizmalkov.dev.meta;
 
-import com.gmail.rgizmalkov.dev.impl.NotNullValidator;
+import efs.validation.meta.related.NotNullValidator;
 import efs.validation.core.meta.RelatedValidator;
 
 import java.lang.annotation.Retention;

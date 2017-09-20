@@ -17,13 +17,16 @@ public class DecomposedObject {
 
     Field field;
 
+    //нужно для массивов
+    Class<?> validationObjectClass;
+
     Object vo;
 
     Decomposed decomposed;
 
     Default defaultValue;
 
-    boolean isArrayElement = false;
+    boolean isArray = false;
 
     public Map<NamedObject, DecomposedObject> getDecomposedObjectMap() {
         return decomposedObjectMap;
@@ -81,12 +84,12 @@ public class DecomposedObject {
         return this;
     }
 
-    public boolean isArrayElement() {
-        return isArrayElement;
+    public boolean isArray() {
+        return isArray;
     }
 
-    public DecomposedObject setArrayElement(boolean arrayElement) {
-        isArrayElement = arrayElement;
+    public DecomposedObject setArray(boolean array) {
+        isArray = array;
         return this;
     }
 
@@ -105,6 +108,15 @@ public class DecomposedObject {
 
     public DecomposedObject setDefaultValue(Default defaultValue) {
         this.defaultValue = defaultValue;
+        return this;
+    }
+
+    public Class<?> getValidationObjectClass() {
+        return validationObjectClass;
+    }
+
+    public DecomposedObject setValidationObjectClass(Class<?> validationObjectClass) {
+        this.validationObjectClass = validationObjectClass;
         return this;
     }
 }

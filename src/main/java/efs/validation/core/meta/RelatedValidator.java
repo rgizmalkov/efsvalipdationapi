@@ -1,6 +1,6 @@
 package efs.validation.core.meta;
 
-import com.gmail.rgizmalkov.dev.ival.Validator;
+import efs.validation.meta.related.Validator;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

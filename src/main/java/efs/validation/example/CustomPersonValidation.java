@@ -1,6 +1,7 @@
 package efs.validation.example;
 
-import com.gmail.rgizmalkov.dev.impl.NotNullValidator;
+import efs.validation.meta.NotEmpty;
+import efs.validation.meta.related.NotNullValidator;
 import com.gmail.rgizmalkov.dev.meta.Pattern;
 import efs.validation.core.meta.Condition;
 import efs.validation.core.meta.RelatedValidator;
@@ -22,10 +23,15 @@ import java.lang.annotation.Target;
                         conditions = {@Condition("FIRST_FLOW"), @Condition("THIRD_FLOW")}
                 ),
                 @DecomposedElement(
-                        fields = {"email"},
-                        validationAnnotations = {Pattern.class},
+                        fields = {"personalEmail"},
+                        validationAnnotations = {efs.validation.meta.Pattern.class},
                         conditions = {@Condition("THIRD_FLOW")},
                         strategy = ObjectStrategy.class
+                ),
+                @DecomposedElement(
+                        fields = {"firstName", "personalEmail", "gender"},
+                        validationAnnotations = {NotEmpty.class},
+                        conditions = {@Condition("SECOND_FLOW")}
                 )
         }
 )

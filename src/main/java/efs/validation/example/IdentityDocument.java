@@ -8,6 +8,8 @@ public class IdentityDocument {
     String seria;
     String number;
 
+    public IdentityDocument(){}
+
     public IdentityDocument(String seria, String number) {
         this.seria = seria;
         this.number = number;

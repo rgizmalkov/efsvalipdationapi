@@ -212,7 +212,7 @@ public final class AnnotationDecomposeService {
     }
 
     private void setRelatedValidator(Set<String> conditions, String exclusion, RelatedValidator relatedValidator, CreateAnnotationRs createAnnotationRs) {
-        createAnnotationRs.addCondition(new Decomposed.ValidationCondition(conditions, relatedValidator.value()).addExcludeOn(exclusion));
+        createAnnotationRs.addCondition(new Decomposed.ValidationCondition().setConditions(conditions).setValidator(relatedValidator.value()).addExcludeOn(exclusion));
     }
 
     private String getExclusionOrNull(ExcludeOn excludeOn) {
@@ -284,7 +284,7 @@ public final class AnnotationDecomposeService {
             ThrowEvent event = annotation.annotationType().getAnnotation(ThrowEvent.class);
             if (event != null) {
                 Decomposed.Strategy.Event eventObject = new Decomposed.Strategy.Event(event.event(), annotation);
-                strategy.setEvent(eventObject);
+                strategy.addEvent(eventObject);
             }
         }
     }

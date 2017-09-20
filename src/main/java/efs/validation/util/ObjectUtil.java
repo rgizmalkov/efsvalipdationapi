@@ -25,11 +25,10 @@ public class ObjectUtil {
         primesClassesSet.add(Float.class);
         primesClassesSet.add(Double.class);
         primesClassesSet.add(Void.class);
-        primesClassesSet.add(Enum.class);
     }
 
     public static boolean isPrimitive(Class<?> o) {
-        return o != null && primesClassesSet.contains(o);
+        return o != null && (primesClassesSet.contains(o) || o.isEnum());
     }
 
     public static <A> A newInstance(Class<A> ex){
@@ -93,6 +92,6 @@ public class ObjectUtil {
     }
 
     public static boolean isArray(/*NonNull*/Object cls, Field field){
-        return field.getType().isArray() || (cls != null && ((cls instanceof Iterable) || (cls instanceof Map) || cls.getClass().isArray()));
+        return field != null && field.getType().isArray() || (cls != null && ((cls instanceof Iterable) || (cls instanceof Map) || cls.getClass().isArray()));
     }
 }
